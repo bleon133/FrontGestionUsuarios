@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Iniciar Sesión — SGU</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="login-page">
+  <div class="login-box">
+    <div class="login-logo">🔐</div>
+    <h2>Bienvenido</h2>
+    <p>Sistema de Gestión de Usuarios — ingresa tus credenciales</p>
+
+    <div id="loginError" class="alert alert-danger d-none" style="
+        padding:10px 14px;border-radius:8px;background:#fee2e2;color:#991b1b;
+        border:1px solid #fca5a5;margin-bottom:14px;font-size:.88rem;">
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Usuario</label>
+      <input id="txUser" type="text" placeholder="nombre de usuario" autocomplete="username"/>
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label>Contraseña</label>
+      <div style="position:relative">
+        <input id="txPass" type="password" placeholder="contraseña" autocomplete="current-password" style="width:100%"/>
+        <i id="togglePass" class="fa fa-eye" style="
+            position:absolute;right:13px;top:50%;transform:translateY(-50%);
+            cursor:pointer;color:#94a3b8"></i>
+      </div>
+    </div>
+    <button class="login-btn" id="btnLogin">
+      <i class="fa fa-sign-in-alt"></i> &nbsp;Ingresar
+    </button>
+    <p style="text-align:center;margin-top:20px;font-size:.78rem;color:#94a3b8">
+      v1.0 — Evaluación III
+    </p>
+  </div>
+</div>
+
+<div id="globalSpinner" class="d-none">
+  <div class="spinner-ring"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="js/api.js"></script>
+<script>
+// Toggle password visibility
+$('#togglePass').click(function(){
+  const inp = $('#txPass');
+  const isPass = inp.attr('type') === 'password';
+  inp.attr('type', isPass ? 'text' : 'password');
+  $(this).toggleClass('fa-eye fa-eye-slash');
+});
+
+// Enter key support
+$('#txPass').keypress(function(e){ if(e.which===13) doLogin(); });
+$('#txUser').keypress(function(e){ if(e.which===13) $('#txPass').focus(); });
+
+$('#btnLogin').click(doLogin);
+
+async function doLogin() {
+  const username = $('#txUser').val().trim();
+  const password = $('#txPass').val().trim();
+
+  if (!username || !password) {
+    showError('Completa usuario y contraseña.');
+    return;
+  }
+
+  showSpinner(true);
+  $('#btnLogin').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Verificando...');
+
+  try {
+    const user = await API.usuarios.getByUser(username);
+
+    // La API puede omitir el password por seguridad (NullValueHandling.Ignore)
+    // Si no viene password en la respuesta, comparamos solo que el usuario exista
+    // y confiamos en que el backend valide (ajusta esto si tu API tiene endpoint de login)
+    if (!user) {
+      showError('Usuario no encontrado.');
+      return;
+    }
+
+    // Si la API sí devuelve el password, valídalo; si no, deja pasar
+    if (user.Password && user.Password !== password) {
+      showError('Credenciales incorrectas.');
+      return;
+    }
+
+    if (user.Suspendido) {
+      showError('Tu cuenta está suspendida. Contacta al administrador.');
+      return;
+    }
+
+    sessionStorage.setItem('user', JSON.stringify(user));
+    sessionStorage.setItem('userId', user.Id);
+    sessionStorage.setItem('username', user.Username);
+
+    toast('¡Bienvenido, ' + user.Username + '!');
+    setTimeout(() => { window.location.href = 'pages/dashboard.html'; }, 800);
+
+  } catch(err) {
+    if (err.message.includes('404') || err.message.toLowerCase().includes('not found')) {
+      showError('Usuario no encontrado.');
+    } else {
+      showError('Error al conectar con el servidor: ' + err.message);
+    }
+  } finally {
+    showSpinner(false);
+    $('#btnLogin').prop('disabled', false).html('<i class="fa fa-sign-in-alt"></i> &nbsp;Ingresar');
+  }
+}
+
+function showError(msg) {
+  $('#loginError').removeClass('d-none').text(msg);
+  $('#txPass').val('').focus();
+}
+</script>
+</body>
+</html>

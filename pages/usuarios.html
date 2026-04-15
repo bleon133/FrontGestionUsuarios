@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Usuarios — SGU</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="../css/styles.css"/>
+</head>
+<body>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/layout.js"></script>
+<script>requireAuth(); renderLayout('usuarios');</script>
+
+<div class="main">
+  <div class="topbar">
+    <h1><i class="fa fa-users" style="color:var(--brand)"></i> &nbsp;Usuarios &amp; Roles</h1>
+    <div class="actions">
+      <button class="btn-brand" id="btnNuevo">
+        <i class="fa fa-plus"></i> &nbsp;Nuevo Usuario
+      </button>
+    </div>
+  </div>
+  <div class="content">
+
+    <div class="card">
+      <div class="card-header-custom">
+        <h5>Listado de usuarios con sus roles</h5>
+        <div class="search-bar" style="width:260px">
+          <i class="fa fa-search"></i>
+          <input id="searchInput" placeholder="Buscar por username..."/>
+        </div>
+      </div>
+      <div class="card-body-custom">
+        <div class="table-wrap">
+          <table class="styled">
+            <thead>
+              <tr>
+                <th>#</th><th>Username</th><th>Estado</th><th>Roles</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyUsuarios">
+              <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">
+                <i class="fa fa-spinner fa-spin"></i> Cargando...
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ MODAL USUARIO ═══ -->
+<div class="modal-overlay" id="modalUsuario">
+  <div class="modal-box" style="width:620px">
+    <div class="modal-head">
+      <h4 id="modalTitle">Nuevo Usuario</h4>
+      <button class="modal-close" id="btnCerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Tabs -->
+      <div style="display:flex;gap:6px;margin-bottom:20px;border-bottom:2px solid var(--border);padding-bottom:0">
+        <button class="tab-btn active" data-tab="datos"
+          style="background:none;border:none;padding:8px 16px;font-family:var(--font);font-weight:600;cursor:pointer;border-bottom:2px solid var(--brand);color:var(--brand)">
+          <i class="fa fa-user"></i> Datos
+        </button>
+        <button class="tab-btn" data-tab="roles"
+          style="background:none;border:none;padding:8px 16px;font-family:var(--font);font-weight:600;cursor:pointer;color:var(--text-muted);border-bottom:2px solid transparent">
+          <i class="fa fa-shield-halved"></i> Roles
+        </button>
+      </div>
+
+      <!-- Tab datos -->
+      <div id="tab-datos">
+        <input type="hidden" id="fId"/>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label>Username *</label>
+            <input id="fUsername" placeholder="nombre de usuario único"/>
+          </div>
+          <div class="form-group">
+            <label>Contraseña *</label>
+            <input id="fPassword" type="password" placeholder="contraseña"/>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="fSuspendido" style="width:16px;height:16px"/>
+              &nbsp;Cuenta suspendida
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab roles -->
+      <div id="tab-roles" style="display:none">
+        <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">
+          Solo disponible al <strong>editar</strong> un usuario existente.
+        </p>
+        <div id="rolesDelUsuario" style="margin-bottom:16px"></div>
+
+        <div style="display:flex;gap:10px;align-items:flex-end">
+          <div class="form-group" style="flex:1;margin:0">
+            <label>Asignar nuevo rol</label>
+            <select id="selRolAsignar">
+              <option value="">-- Selecciona un rol --</option>
+            </select>
+          </div>
+          <button class="btn-brand" id="btnAsignarRol" style="margin-bottom:1px">
+            <i class="fa fa-plus"></i> Asignar
+          </button>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-icon" id="btnCancelar" style="padding:8px 18px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-weight:600;cursor:pointer">Cancelar</button>
+      <button class="btn-brand" id="btnGuardar"><i class="fa fa-floppy-disk"></i> &nbsp;Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allUsuarios = [];
+let editMode = false;
+let currentUserId = null;
+
+// ─── Cargar usuarios ───
+async function loadUsuarios() {
+  try {
+    allUsuarios = await API.usuarios.getAll();
+    renderTable(allUsuarios);
+  } catch(e) {
+    $('#tbodyUsuarios').html(`<tr><td colspan="5" style="text-align:center;color:var(--danger)">Error: ${e.message}</td></tr>`);
+  }
+}
+
+function renderTable(data) {
+  if (!data.length) {
+    $('#tbodyUsuarios').html('<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted)">Sin registros</td></tr>');
+    return;
+  }
+  const rows = data.map(u => {
+    const roles = u.UsuariosRolesDtos && u.UsuariosRolesDtos.length
+      ? u.UsuariosRolesDtos.map(r => `<span class="badge-role">${r.RolesDto?.Valor || 'Rol #'+r.IdRol}</span>`).join(' ')
+      : '<span style="color:var(--text-muted);font-size:.8rem">Sin roles</span>';
+    const estado = u.Suspendido
+      ? '<span class="badge-inactive"><i class="fa fa-ban"></i> Suspendido</span>'
+      : '<span class="badge-active"><i class="fa fa-check"></i> Activo</span>';
+    return `
+      <tr>
+        <td>${u.Id}</td>
+        <td><strong>${u.Username}</strong></td>
+        <td>${estado}</td>
+        <td style="max-width:220px">${roles}</td>
+        <td style="white-space:nowrap">
+          <button class="btn-icon edit" title="Editar" onclick="editarUsuario(${u.Id})"><i class="fa fa-pen"></i></button>
+          <button class="btn-icon" title="${u.Suspendido?'Activar':'Suspender'}" onclick="toggleSuspendido(${u.Id})" style="color:var(--warning)"><i class="fa fa-power-off"></i></button>
+          <button class="btn-icon del" title="Eliminar" onclick="eliminarUsuario(${u.Id})"><i class="fa fa-trash"></i></button>
+        </td>
+      </tr>`;
+  }).join('');
+  $('#tbodyUsuarios').html(rows);
+}
+
+// ─── Nuevo ───
+$('#btnNuevo').click(() => {
+  editMode = false; currentUserId = null;
+  resetForm();
+  $('#modalTitle').text('Nuevo Usuario');
+  $('#tab-roles p').text('Primero guarda el usuario, luego podrás asignar roles desde editar.');
+  openModal();
+});
+
+// ─── Editar ───
+async function editarUsuario(id) {
+  try {
+    showSpinner(true);
+    const u = await API.usuarios.getById(id);
+    editMode = true; currentUserId = id;
+    resetForm();
+
+    $('#fId').val(u.Id);
+    $('#fUsername').val(u.Username);
+    $('#fPassword').val(u.Password);
+    $('#fSuspendido').prop('checked', u.Suspendido);
+
+    await cargarRolesUsuario(id);
+    await cargarSelectRoles();
+
+    $('#modalTitle').text('Editar Usuario #' + id);
+    openModal();
+  } catch(e) {
+    toast('Error: '+e.message, 'error');
+  } finally { showSpinner(false); }
+}
+
+// ─── Cargar roles del usuario ───
+async function cargarRolesUsuario(idUsuario) {
+  try {
+    const usuRoles = await API.usuarioRoles.getByUsuario(idUsuario);
+    if (!usuRoles.length) {
+      $('#rolesDelUsuario').html('<p style="color:var(--text-muted);font-size:.85rem">Sin roles asignados</p>');
+      return;
+    }
+    const badges = usuRoles.map(ur => `
+      <span style="display:inline-flex;align-items:center;gap:6px;background:var(--brand-soft);
+        color:var(--brand);padding:3px 10px;border-radius:20px;font-size:.82rem;font-weight:600;margin:3px">
+        ${ur.RolesDto?.Valor || 'Rol #'+ur.IdRol}
+        <button onclick="quitarRol(${ur.Id})" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:.9rem;line-height:1">&times;</button>
+      </span>`).join('');
+    $('#rolesDelUsuario').html(`<div style="margin-bottom:6px"><strong style="font-size:.8rem">Roles actuales:</strong></div>${badges}`);
+  } catch(e) {
+    $('#rolesDelUsuario').html(`<p style="color:var(--danger)">Error al cargar roles</p>`);
+  }
+}
+
+async function cargarSelectRoles() {
+  try {
+    const roles = await API.roles.getAll();
+    const opts = roles.map(r => `<option value="${r.Id}">${r.Valor}</option>`).join('');
+    $('#selRolAsignar').html('<option value="">-- Selecciona un rol --</option>' + opts);
+  } catch(e) {}
+}
+
+// ─── Asignar rol ───
+$('#btnAsignarRol').click(async () => {
+  const idRol = parseInt($('#selRolAsignar').val());
+  if (!idRol) { toast('Selecciona un rol', 'warning'); return; }
+  if (!currentUserId) { toast('Guarda el usuario primero', 'warning'); return; }
+  try {
+    showSpinner(true);
+    await API.usuarioRoles.create({ IdUsuario: currentUserId, IdRol: idRol });
+    toast('Rol asignado correctamente');
+    await cargarRolesUsuario(currentUserId);
+    loadUsuarios();
+  } catch(e) {
+    toast('Error: '+e.message, 'error');
+  } finally { showSpinner(false); }
+});
+
+async function quitarRol(urId) {
+  if (!confirm('¿Quitar este rol del usuario?')) return;
+  try {
+    showSpinner(true);
+    await API.usuarioRoles.delete(urId);
+    toast('Rol removido');
+    await cargarRolesUsuario(currentUserId);
+    loadUsuarios();
+  } catch(e) {
+    toast('Error: '+e.message, 'error');
+  } finally { showSpinner(false); }
+}
+
+// ─── Eliminar usuario ───
+async function eliminarUsuario(id) {
+  if (!confirm('¿Eliminar usuario #' + id + '?')) return;
+  try {
+    showSpinner(true);
+    await API.usuarios.delete(id);
+    toast('Usuario eliminado');
+    loadUsuarios();
+  } catch(e) {
+    toast('Error: '+e.message, 'error');
+  } finally { showSpinner(false); }
+}
+
+// ─── Toggle suspendido ───
+async function toggleSuspendido(id) {
+  try {
+    showSpinner(true);
+    await API.usuarios.toggle(id);
+    toast('Estado del usuario actualizado');
+    loadUsuarios();
+  } catch(e) {
+    toast('Error: '+e.message, 'error');
+  } finally { showSpinner(false); }
+}
+
+// ─── Guardar ───
+$('#btnGuardar').click(async () => {
+  const username = $('#fUsername').val().trim();
+  const password = $('#fPassword').val().trim();
+  if (!username || !password) { toast('Username y contraseña son obligatorios', 'warning'); return; }
+
+  const data = {
+    Username: username,
+    Password: password,
+    Suspendido: $('#fSuspendido').prop('checked'),
+  };
+
+  try {
+    showSpinner(true);
+    if (editMode) {
+      await API.usuarios.update(currentUserId, data);
+      toast('Usuario actualizado');
+    } else {
+      await API.usuarios.create(data);
+      toast('Usuario creado');
+    }
+    closeModal();
+    loadUsuarios();
+  } catch(e) {
+    toast('Error: '+e.message, 'error');
+  } finally { showSpinner(false); }
+});
+
+// ─── Tabs ───
+$('.tab-btn').click(function(){
+  $('.tab-btn').css({'color':'var(--text-muted)','border-bottom':'2px solid transparent'});
+  $(this).css({'color':'var(--brand)','border-bottom':'2px solid var(--brand)'});
+  const tab = $(this).data('tab');
+  $('#tab-datos, #tab-roles').hide();
+  $(`#tab-${tab}`).show();
+});
+
+// ─── Búsqueda ───
+$('#searchInput').on('input', function(){
+  const q = $(this).val().toLowerCase();
+  renderTable(allUsuarios.filter(u => (u.Username||'').toLowerCase().includes(q)));
+});
+
+function openModal(){ document.getElementById('modalUsuario').classList.add('open'); }
+function closeModal(){ document.getElementById('modalUsuario').classList.remove('open'); }
+function resetForm(){
+  ['fId','fUsername','fPassword'].forEach(i=>$(`#${i}`).val(''));
+  $('#fSuspendido').prop('checked',false);
+  $('#rolesDelUsuario').html('');
+  $('.tab-btn').first().click();
+}
+
+$('#btnCerrar, #btnCancelar').click(closeModal);
+
+loadUsuarios();
+</script>
+</body>
+</html>

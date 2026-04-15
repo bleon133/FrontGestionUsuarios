@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Perfiles de Usuario — SGU</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="../css/styles.css"/>
+</head>
+<body>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/layout.js"></script>
+<script>requireAuth(); renderLayout('perfiles');</script>
+
+<div class="main">
+  <div class="topbar">
+    <h1><i class="fa fa-id-card" style="color:var(--brand)"></i> &nbsp;Perfiles de Usuario</h1>
+    <div class="actions">
+      <button class="btn-brand" id="btnNuevo">
+        <i class="fa fa-plus"></i> &nbsp;Nuevo Perfil
+      </button>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- Search + table -->
+    <div class="card">
+      <div class="card-header-custom">
+        <h5>Listado de perfiles</h5>
+        <div class="search-bar" style="width:260px">
+          <i class="fa fa-search"></i>
+          <input id="searchInput" placeholder="Buscar por nombre o RFC..."/>
+        </div>
+      </div>
+      <div class="card-body-custom">
+        <div class="table-wrap">
+          <table class="styled" id="tblPerfiles">
+            <thead>
+              <tr>
+                <th>#</th><th>Nombre completo</th><th>RFC</th>
+                <th>F. Nacimiento</th><th>Usuario</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyPerfiles">
+              <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">
+                <i class="fa fa-spinner fa-spin"></i> Cargando...
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ MODAL PERFIL ═══ -->
+<div class="modal-overlay" id="modalPerfil">
+  <div class="modal-box" style="width:680px">
+    <div class="modal-head">
+      <h4 id="modalTitle">Nuevo Perfil</h4>
+      <button class="modal-close" id="btnCerrarModal">&times;</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Tabs -->
+      <div style="display:flex;gap:6px;margin-bottom:20px;border-bottom:2px solid var(--border);padding-bottom:0">
+        <button class="tab-btn active" data-tab="perfil"
+          style="background:none;border:none;padding:8px 16px;font-family:var(--font);
+          font-weight:600;cursor:pointer;border-bottom:2px solid var(--brand);color:var(--brand)">
+          <i class="fa fa-user"></i> Perfil
+        </button>
+        <button class="tab-btn" data-tab="direccion"
+          style="background:none;border:none;padding:8px 16px;font-family:var(--font);
+          font-weight:600;cursor:pointer;color:var(--text-muted);border-bottom:2px solid transparent">
+          <i class="fa fa-map-marker-alt"></i> Dirección
+        </button>
+        <button class="tab-btn" data-tab="telefono"
+          style="background:none;border:none;padding:8px 16px;font-family:var(--font);
+          font-weight:600;cursor:pointer;color:var(--text-muted);border-bottom:2px solid transparent">
+          <i class="fa fa-phone"></i> Teléfono
+        </button>
+      </div>
+
+      <!-- Tab: Perfil -->
+      <div id="tab-perfil">
+        <input type="hidden" id="fPerfilId"/>
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label>Nombre *</label>
+            <input id="fNombre" placeholder="Nombre(s)"/>
+          </div>
+          <div class="form-group">
+            <label>Apellido Paterno *</label>
+            <input id="fApPaterno" placeholder="Apellido paterno"/>
+          </div>
+          <div class="form-group">
+            <label>Apellido Materno</label>
+            <input id="fApMaterno" placeholder="Apellido materno"/>
+          </div>
+          <div class="form-group">
+            <label>RFC</label>
+            <input id="fRfc" placeholder="XAXX010101000" maxlength="13"/>
+          </div>
+          <div class="form-group">
+            <label>Fecha de Nacimiento *</label>
+            <input id="fFechaNac" type="date"/>
+          </div>
+          <div class="form-group">
+            <label>Usuario *</label>
+            <select id="fIdUsuario">
+              <option value="">-- Selecciona un usuario --</option>
+            </select>
+            <small id="fIdUsuarioHelp" style="color:var(--text-muted);font-size:.76rem;margin-top:4px;display:block"></small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Dirección -->
+      <div id="tab-direccion" style="display:none">
+        <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">
+          <i class="fa fa-info-circle"></i> La dirección se guardará asociada al perfil al confirmar.
+        </p>
+        <input type="hidden" id="fDirId"/>
+        <div class="form-row cols-2">
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Calle *</label>
+            <input id="fCalle" placeholder="Nombre de la calle"/>
+          </div>
+          <div class="form-group">
+            <label>Colonia *</label>
+            <input id="fColonia" placeholder="Colonia"/>
+          </div>
+          <div class="form-group">
+            <label>Municipio *</label>
+            <input id="fMunicipio" placeholder="Municipio / Delegación"/>
+          </div>
+          <div class="form-group">
+            <label>Número Exterior</label>
+            <input id="fNumExt" placeholder="Ej. 123"/>
+          </div>
+          <div class="form-group">
+            <label>Número Interior</label>
+            <input id="fNumInt" placeholder="Ej. 4B (opcional)"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Teléfono -->
+      <div id="tab-telefono" style="display:none">
+        <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px">
+          <i class="fa fa-info-circle"></i> Al menos un número de contacto es recomendable.
+        </p>
+        <input type="hidden" id="fTelId"/>
+        <div class="form-row cols-1">
+          <div class="form-group">
+            <label>Celular *</label>
+            <input id="fCelular" placeholder="10 dígitos" maxlength="15"/>
+          </div>
+          <div class="form-group">
+            <label>Casa</label>
+            <input id="fCasa" placeholder="Teléfono de casa (opcional)"/>
+          </div>
+          <div class="form-group">
+            <label>Oficina</label>
+            <input id="fOficina" placeholder="Teléfono de oficina (opcional)"/>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-icon" id="btnCancelar" style="padding:8px 18px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-weight:600;cursor:pointer">
+        Cancelar
+      </button>
+      <button class="btn-brand" id="btnGuardar">
+        <i class="fa fa-floppy-disk"></i> &nbsp;Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL DETALLE ═══ -->
+<div class="modal-overlay" id="modalDetalle">
+  <div class="modal-box" style="width:620px">
+    <div class="modal-head">
+      <h4><i class="fa fa-id-card"></i> &nbsp;Detalle del Perfil</h4>
+      <button class="modal-close" id="btnCerrarDetalle">&times;</button>
+    </div>
+    <div class="modal-body" id="detalleBody"></div>
+    <div class="modal-footer">
+      <button class="btn-icon" id="btnCerrarDetalle2" style="padding:8px 18px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-weight:600;cursor:pointer">
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let editMode = false;
+let currentPerfilId = null;
+let allPerfiles = [];
+
+// ─── Cargar tabla ───
+async function loadPerfiles() {
+  try {
+    allPerfiles = await API.perfiles.getAll();
+    renderTable(allPerfiles);
+  } catch(e) {
+    $('#tbodyPerfiles').html(`<tr><td colspan="6" style="text-align:center;color:var(--danger)">Error: ${e.message}</td></tr>`);
+  }
+}
+
+function renderTable(data) {
+  if (!data.length) {
+    $('#tbodyPerfiles').html('<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">Sin registros</td></tr>');
+    return;
+  }
+  const rows = data.map(p => `
+    <tr>
+      <td>${p.Id}</td>
+      <td><strong>${p.Nombre} ${p.ApellidoPaterno} ${p.ApellidoMaterno || ''}</strong></td>
+      <td><code style="font-size:.8rem">${p.Rfc || '—'}</code></td>
+      <td>${p.FechaNacimiento ? p.FechaNacimiento.substring(0,10) : '—'}</td>
+      <td>${p.IdUsuario || '—'}</td>
+      <td>
+        <button class="btn-icon" title="Ver detalle" onclick="verDetalle(${p.Id})"><i class="fa fa-eye"></i></button>
+        <button class="btn-icon edit" title="Editar" onclick="editarPerfil(${p.Id})"><i class="fa fa-pen"></i></button>
+        <button class="btn-icon del" title="Eliminar" onclick="eliminarPerfil(${p.Id})"><i class="fa fa-trash"></i></button>
+      </td>
+    </tr>`).join('');
+  $('#tbodyPerfiles').html(rows);
+}
+
+// ─── Búsqueda ───
+$('#searchInput').on('input', function(){
+  const q = $(this).val().toLowerCase();
+  const filtered = allPerfiles.filter(p =>
+    (p.Nombre+' '+p.ApellidoPaterno+' '+(p.ApellidoMaterno||'')).toLowerCase().includes(q) ||
+    (p.Rfc||'').toLowerCase().includes(q)
+  );
+  renderTable(filtered);
+});
+
+// ─── Cargar usuarios en select ───
+// editMode=false → solo usuarios sin perfil asignado
+// editMode=true  → todos los usuarios (el actual puede ya tener perfil)
+async function cargarUsuarios(idUsuarioActual = null) {
+  try {
+    const [users, perfiles] = await Promise.all([
+      API.usuarios.getAll(),
+      API.perfiles.getAll()
+    ]);
+
+    // IDs de usuarios que ya tienen perfil
+    const usersConPerfil = new Set(
+      perfiles
+        .filter(p => p.IdUsuario)
+        .map(p => p.IdUsuario)
+    );
+
+    // En modo edición excluimos el usuario actual del filtro
+    // para que siga apareciendo en el select
+    const disponibles = users.filter(u =>
+      !usersConPerfil.has(u.Id) || u.Id === idUsuarioActual
+    );
+
+    if (disponibles.length === 0 && !idUsuarioActual) {
+      $('#fIdUsuario').html('<option value="">-- No hay usuarios disponibles --</option>');
+      $('#fIdUsuarioHelp').text('Todos los usuarios ya tienen perfil asignado.');
+      return;
+    }
+
+    const opts = disponibles.map(u =>
+      `<option value="${u.Id}">${u.Username} (ID:${u.Id})</option>`
+    ).join('');
+
+    $('#fIdUsuario').html('<option value="">-- Selecciona un usuario --</option>' + opts);
+    $('#fIdUsuarioHelp').text(
+      `${disponibles.length} usuario(s) sin perfil disponible(s).`
+    );
+  } catch(e) {
+    $('#fIdUsuarioHelp').text('Error al cargar usuarios.');
+  }
+}
+
+// ─── Abrir modal nuevo ───
+$('#btnNuevo').click(() => {
+  editMode = false; currentPerfilId = null;
+  resetForm();
+  $('#modalTitle').text('Nuevo Perfil');
+  openModal('modalPerfil');
+  cargarUsuarios(); // sin argumento → filtra usuarios con perfil
+});
+
+// ─── Editar perfil ───
+async function editarPerfil(id) {
+  try {
+    showSpinner(true);
+    const p = await API.perfiles.getById(id);
+    editMode = true; currentPerfilId = id;
+    resetForm();
+    await cargarUsuarios(p.IdUsuario || null);
+
+    $('#fPerfilId').val(p.Id);
+    $('#fNombre').val(p.Nombre);
+    $('#fApPaterno').val(p.ApellidoPaterno);
+    $('#fApMaterno').val(p.ApellidoMaterno);
+    $('#fRfc').val(p.Rfc);
+    $('#fFechaNac').val(p.FechaNacimiento ? p.FechaNacimiento.substring(0,10) : '');
+    $('#fIdUsuario').val(p.IdUsuario || '');
+
+    // Dirección (primera si existe)
+    if (p.DireccionDtos && p.DireccionDtos.length > 0) {
+      const d = p.DireccionDtos[0];
+      $('#fDirId').val(d.Id);
+      $('#fCalle').val(d.Calle);
+      $('#fColonia').val(d.Colonia);
+      $('#fMunicipio').val(d.Municipio);
+      $('#fNumExt').val(d.NumExterior);
+      $('#fNumInt').val(d.NumInterior);
+    }
+    // Teléfono (primero si existe)
+    if (p.TelefonosDtos && p.TelefonosDtos.length > 0) {
+      const t = p.TelefonosDtos[0];
+      $('#fTelId').val(t.Id);
+      $('#fCelular').val(t.Celular);
+      $('#fCasa').val(t.Casa);
+      $('#fOficina').val(t.Oficina);
+    }
+
+    $('#modalTitle').text('Editar Perfil #' + id);
+    openModal('modalPerfil');
+  } catch(e) {
+    toast('Error al cargar perfil: '+e.message, 'error');
+  } finally { showSpinner(false); }
+}
+
+// ─── Ver detalle ───
+async function verDetalle(id) {
+  try {
+    showSpinner(true);
+    const p = await API.perfiles.getById(id);
+    const dir = p.DireccionDtos && p.DireccionDtos.length > 0 ? p.DireccionDtos[0] : null;
+    const tel = p.TelefonosDtos && p.TelefonosDtos.length > 0 ? p.TelefonosDtos[0] : null;
+
+    let html = `
+      <div class="detail-section">
+        <h6><i class="fa fa-user"></i> &nbsp;Datos del Perfil</h6>
+        <div class="detail-grid">
+          <div class="detail-item"><label>ID</label><span>${p.Id}</span></div>
+          <div class="detail-item"><label>Nombre completo</label><span>${p.Nombre} ${p.ApellidoPaterno} ${p.ApellidoMaterno||''}</span></div>
+          <div class="detail-item"><label>RFC</label><span>${p.Rfc||'—'}</span></div>
+          <div class="detail-item"><label>F. Nacimiento</label><span>${p.FechaNacimiento?p.FechaNacimiento.substring(0,10):'—'}</span></div>
+          <div class="detail-item"><label>ID Usuario</label><span>${p.IdUsuario||'—'}</span></div>
+        </div>
+      </div>`;
+
+    html += `<div class="detail-section">
+      <h6><i class="fa fa-map-marker-alt"></i> &nbsp;Dirección</h6>`;
+    if (dir) {
+      html += `<div class="detail-grid">
+        <div class="detail-item" style="grid-column:1/-1"><label>Calle</label><span>${dir.Calle||'—'}</span></div>
+        <div class="detail-item"><label>Colonia</label><span>${dir.Colonia||'—'}</span></div>
+        <div class="detail-item"><label>Municipio</label><span>${dir.Municipio||'—'}</span></div>
+        <div class="detail-item"><label>Núm. Exterior</label><span>${dir.NumExterior||'—'}</span></div>
+        <div class="detail-item"><label>Núm. Interior</label><span>${dir.NumInterior||'—'}</span></div>
+      </div>`;
+    } else {
+      html += `<p style="color:var(--text-muted);font-size:.85rem">Sin dirección registrada</p>`;
+    }
+    html += `</div>`;
+
+    html += `<div class="detail-section">
+      <h6><i class="fa fa-phone"></i> &nbsp;Teléfono</h6>`;
+    if (tel) {
+      html += `<div class="detail-grid">
+        <div class="detail-item"><label>Celular</label><span>${tel.Celular||'—'}</span></div>
+        <div class="detail-item"><label>Casa</label><span>${tel.Casa||'—'}</span></div>
+        <div class="detail-item"><label>Oficina</label><span>${tel.Oficina||'—'}</span></div>
+      </div>`;
+    } else {
+      html += `<p style="color:var(--text-muted);font-size:.85rem">Sin teléfono registrado</p>`;
+    }
+    html += `</div>`;
+
+    $('#detalleBody').html(html);
+    openModal('modalDetalle');
+  } catch(e) {
+    toast('Error: '+e.message, 'error');
+  } finally { showSpinner(false); }
+}
+
+// ─── Eliminar perfil ───
+async function eliminarPerfil(id) {
+  if (!confirm('¿Eliminar perfil #' + id + ' junto con su dirección y teléfono?')) return;
+  try {
+    showSpinner(true);
+    await API.perfiles.delete(id);
+    toast('Perfil eliminado correctamente');
+    loadPerfiles();
+  } catch(e) {
+    toast('Error al eliminar: '+e.message, 'error');
+  } finally { showSpinner(false); }
+}
+
+// ─── Guardar (create / update) ───
+$('#btnGuardar').click(async () => {
+  const nombre = $('#fNombre').val().trim();
+  const apPat  = $('#fApPaterno').val().trim();
+  const fecha  = $('#fFechaNac').val();
+  const idUsuario = parseInt($('#fIdUsuario').val());
+
+  if (!nombre || !apPat || !fecha) {
+    toast('Nombre, apellido paterno y fecha son obligatorios', 'warning');
+    return;
+  }
+
+  if (!editMode && !idUsuario) {
+    toast('Debes seleccionar un usuario para el perfil', 'warning');
+    // Regresa al tab de perfil para que el usuario vea el campo
+    $('.tab-btn[data-tab="perfil"]').click();
+    $('#fIdUsuario').focus();
+    return;
+  }
+
+  const perfilData = {
+    Nombre: nombre,
+    ApellidoPaterno: apPat,
+    ApellidoMaterno: $('#fApMaterno').val().trim(),
+    Rfc: $('#fRfc').val().trim(),
+    FechaNacimiento: fecha,
+    IdUsuario: idUsuario || null,
+  };
+
+  const dirData = {
+    Calle: $('#fCalle').val().trim(),
+    Colonia: $('#fColonia').val().trim(),
+    Municipio: $('#fMunicipio').val().trim(),
+    NumExterior: $('#fNumExt').val().trim(),
+    NumInterior: $('#fNumInt').val().trim(),
+  };
+
+  const telData = {
+    Celular: $('#fCelular').val().trim(),
+    Casa: $('#fCasa').val().trim(),
+    Oficina: $('#fOficina').val().trim(),
+  };
+
+  try {
+    showSpinner(true);
+    let perfilId = currentPerfilId;
+
+    if (editMode) {
+      await API.perfiles.update(perfilId, perfilData);
+
+      // Actualizar dirección si existe
+      const dirId = parseInt($('#fDirId').val());
+      if (dirData.Calle && dirId) {
+        await API.direcciones.update(dirId, { ...dirData, IdPerfilUsuario: perfilId });
+      } else if (dirData.Calle && !dirId) {
+        await API.direcciones.create({ ...dirData, IdPerfilUsuario: perfilId });
+      }
+      // Actualizar teléfono si existe
+      const telId = parseInt($('#fTelId').val());
+      if (telData.Celular && telId) {
+        await API.telefonos.update(telId, { ...telData, IdPerfilUsuario: perfilId });
+      } else if (telData.Celular && !telId) {
+        await API.telefonos.create({ ...telData, IdPerfilUsuario: perfilId });
+      }
+      toast('Perfil actualizado correctamente');
+    } else {
+      await API.perfiles.create(perfilData);
+      // Obtener el perfil recién creado (buscar el último)
+      const todos = await API.perfiles.getAll();
+      const nuevo = todos[todos.length - 1];
+      perfilId = nuevo.Id;
+
+      if (dirData.Calle) {
+        await API.direcciones.create({ ...dirData, IdPerfilUsuario: perfilId });
+      }
+      if (telData.Celular) {
+        await API.telefonos.create({ ...telData, IdPerfilUsuario: perfilId });
+      }
+      toast('Perfil creado correctamente');
+    }
+
+    closeModal('modalPerfil');
+    loadPerfiles();
+  } catch(e) {
+    toast('Error al guardar: ' + e.message, 'error');
+  } finally { showSpinner(false); }
+});
+
+// ─── Tabs ───
+$('.tab-btn').click(function(){
+  $('.tab-btn').css({'color':'var(--text-muted)','border-bottom':'2px solid transparent'});
+  $(this).css({'color':'var(--brand)','border-bottom':'2px solid var(--brand)'});
+  const tab = $(this).data('tab');
+  $('#tab-perfil, #tab-direccion, #tab-telefono').hide();
+  $(`#tab-${tab}`).show();
+});
+
+// ─── Helpers modal ───
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function resetForm() {
+  ['fPerfilId','fNombre','fApPaterno','fApMaterno','fRfc','fFechaNac',
+   'fDirId','fCalle','fColonia','fMunicipio','fNumExt','fNumInt',
+   'fTelId','fCelular','fCasa','fOficina'].forEach(id => $(`#${id}`).val(''));
+  // Reset tabs
+  $('.tab-btn').first().click();
+}
+
+$('#btnCerrarModal, #btnCancelar').click(()=> closeModal('modalPerfil'));
+$('#btnCerrarDetalle, #btnCerrarDetalle2').click(()=> closeModal('modalDetalle'));
+
+// ─── Init ───
+loadPerfiles();
+</script>
+</body>
+</html>

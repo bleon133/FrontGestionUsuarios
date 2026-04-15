@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Direcciones — SGU</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="../css/styles.css"/>
+</head>
+<body>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/layout.js"></script>
+<script>requireAuth(); renderLayout('direcciones');</script>
+
+<div class="main">
+  <div class="topbar">
+    <h1><i class="fa fa-map-marker-alt" style="color:var(--brand)"></i> &nbsp;Direcciones</h1>
+    <div class="actions">
+      <button class="btn-brand" id="btnNueva">
+        <i class="fa fa-plus"></i> &nbsp;Nueva Dirección
+      </button>
+    </div>
+  </div>
+  <div class="content">
+
+    <div class="card">
+      <div class="card-header-custom">
+        <h5>CRUD de Direcciones</h5>
+        <div class="search-bar" style="width:260px">
+          <i class="fa fa-search"></i>
+          <input id="searchInput" placeholder="Buscar calle, colonia, municipio..."/>
+        </div>
+      </div>
+      <div class="card-body-custom">
+        <div class="table-wrap">
+          <table class="styled">
+            <thead>
+              <tr>
+                <th>#</th><th>Calle</th><th>Colonia</th><th>Municipio</th>
+                <th>Núm. Ext.</th><th>Núm. Int.</th><th>ID Perfil</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyDir">
+              <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted)">
+                <i class="fa fa-spinner fa-spin"></i> Cargando...
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalDir">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h4 id="modalTitle">Nueva Dirección</h4>
+      <button class="modal-close" id="btnCerrar">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="fId"/>
+      <div class="form-row cols-1">
+        <div class="form-group">
+          <label>Calle *</label>
+          <input id="fCalle" placeholder="Nombre de la calle"/>
+        </div>
+      </div>
+      <div class="form-row cols-2" style="margin-top:12px">
+        <div class="form-group">
+          <label>Colonia *</label>
+          <input id="fColonia" placeholder="Colonia"/>
+        </div>
+        <div class="form-group">
+          <label>Municipio *</label>
+          <input id="fMunicipio" placeholder="Municipio / Delegación"/>
+        </div>
+        <div class="form-group">
+          <label>Número Exterior</label>
+          <input id="fNumExt" placeholder="123"/>
+        </div>
+        <div class="form-group">
+          <label>Número Interior</label>
+          <input id="fNumInt" placeholder="4B (opcional)"/>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Perfil de Usuario *</label>
+          <select id="fIdPerfil">
+            <option value="">-- Selecciona un perfil --</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-icon" id="btnCancelar" style="padding:8px 18px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font);font-weight:600;cursor:pointer">Cancelar</button>
+      <button class="btn-brand" id="btnGuardar"><i class="fa fa-floppy-disk"></i> &nbsp;Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let allDirs = [];
+let editMode = false;
+
+async function loadDirs() {
+  try {
+    allDirs = await API.direcciones.getAll();
+    renderTable(allDirs);
+  } catch(e) {
+    $('#tbodyDir').html(`<tr><td colspan="8" style="text-align:center;color:var(--danger)">Error: ${e.message}</td></tr>`);
+  }
+}
+
+function renderTable(data) {
+  if (!data.length) {
+    $('#tbodyDir').html('<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted)">Sin registros</td></tr>');
+    return;
+  }
+  const rows = data.map(d => `
+    <tr>
+      <td>${d.Id}</td>
+      <td>${d.Calle || '—'}</td>
+      <td>${d.Colonia || '—'}</td>
+      <td>${d.Municipio || '—'}</td>
+      <td>${d.NumExterior || '—'}</td>
+      <td>${d.NumInterior || '—'}</td>
+      <td>${d.IdPerfilUsuario || '—'}</td>
+      <td>
+        <button class="btn-icon edit" onclick="editarDir(${d.Id})"><i class="fa fa-pen"></i></button>
+        <button class="btn-icon del" onclick="eliminarDir(${d.Id})"><i class="fa fa-trash"></i></button>
+      </td>
+    </tr>`).join('');
+  $('#tbodyDir').html(rows);
+}
+
+async function cargarPerfiles() {
+  try {
+    const perfiles = await API.perfiles.getAll();
+    const opts = perfiles.map(p =>
+      `<option value="${p.Id}">${p.Nombre} ${p.ApellidoPaterno} (ID:${p.Id})</option>`
+    ).join('');
+    $('#fIdPerfil').html('<option value="">-- Selecciona un perfil --</option>' + opts);
+  } catch(e) {}
+}
+
+$('#btnNueva').click(() => {
+  editMode = false;
+  resetForm();
+  $('#modalTitle').text('Nueva Dirección');
+  cargarPerfiles();
+  openModal();
+});
+
+async function editarDir(id) {
+  try {
+    showSpinner(true);
+    const d = await API.direcciones.getById(id);
+    editMode = true;
+    resetForm();
+    await cargarPerfiles();
+    $('#fId').val(d.Id);
+    $('#fCalle').val(d.Calle);
+    $('#fColonia').val(d.Colonia);
+    $('#fMunicipio').val(d.Municipio);
+    $('#fNumExt').val(d.NumExterior);
+    $('#fNumInt').val(d.NumInterior);
+    $('#fIdPerfil').val(d.IdPerfilUsuario);
+    $('#modalTitle').text('Editar Dirección #' + id);
+    openModal();
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  } finally { showSpinner(false); }
+}
+
+async function eliminarDir(id) {
+  if (!confirm('¿Eliminar dirección #' + id + '?')) return;
+  try {
+    showSpinner(true);
+    await API.direcciones.delete(id);
+    toast('Dirección eliminada');
+    loadDirs();
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  } finally { showSpinner(false); }
+}
+
+$('#btnGuardar').click(async () => {
+  const calle    = $('#fCalle').val().trim();
+  const colonia  = $('#fColonia').val().trim();
+  const municipio = $('#fMunicipio').val().trim();
+  const idPerfil = parseInt($('#fIdPerfil').val());
+
+  if (!calle || !colonia || !municipio || !idPerfil) {
+    toast('Calle, colonia, municipio y perfil son obligatorios', 'warning');
+    return;
+  }
+
+  const data = {
+    Calle: calle, Colonia: colonia, Municipio: municipio,
+    NumExterior: $('#fNumExt').val().trim(),
+    NumInterior: $('#fNumInt').val().trim(),
+    IdPerfilUsuario: idPerfil,
+  };
+
+  try {
+    showSpinner(true);
+    if (editMode) {
+      await API.direcciones.update(parseInt($('#fId').val()), data);
+      toast('Dirección actualizada');
+    } else {
+      await API.direcciones.create(data);
+      toast('Dirección creada');
+    }
+    closeModal();
+    loadDirs();
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  } finally { showSpinner(false); }
+});
+
+$('#searchInput').on('input', function(){
+  const q = $(this).val().toLowerCase();
+  const filtered = allDirs.filter(d =>
+    (d.Calle||'').toLowerCase().includes(q) ||
+    (d.Colonia||'').toLowerCase().includes(q) ||
+    (d.Municipio||'').toLowerCase().includes(q)
+  );
+  renderTable(filtered);
+});
+
+function openModal(){ document.getElementById('modalDir').classList.add('open'); }
+function closeModal(){ document.getElementById('modalDir').classList.remove('open'); }
+function resetForm(){['fId','fCalle','fColonia','fMunicipio','fNumExt','fNumInt'].forEach(i=>$(`#${i}`).val(''));}
+
+$('#btnCerrar, #btnCancelar').click(closeModal);
+
+loadDirs();
+</script>
+</body>
+</html>

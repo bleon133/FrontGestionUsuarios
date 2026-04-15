@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Listado General — SGU</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="../css/styles.css"/>
+</head>
+<body>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/layout.js"></script>
+<script>requireAuth(); renderLayout('listado');</script>
+
+<div class="main">
+  <div class="topbar">
+    <h1><i class="fa fa-table-list" style="color:var(--brand)"></i> &nbsp;Listado General</h1>
+    <div class="actions">
+      <span style="font-size:.82rem;color:var(--text-muted)">
+        <i class="fa fa-sort-amount-up"></i> Ordenado por fecha de cumpleaños ASC
+      </span>
+      <button class="btn-brand" id="btnRefresh" style="background:#6366f1">
+        <i class="fa fa-rotate-right"></i> &nbsp;Actualizar
+      </button>
+    </div>
+  </div>
+  <div class="content">
+
+    <div class="card">
+      <div class="card-header-custom">
+        <h5>Todos los perfiles con dirección y teléfono</h5>
+        <div class="search-bar" style="width:280px">
+          <i class="fa fa-search"></i>
+          <input id="searchInput" placeholder="Buscar por nombre, RFC, municipio..."/>
+        </div>
+      </div>
+      <div class="card-body-custom">
+        <div class="table-wrap">
+          <table class="styled" id="tblListado">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre completo</th>
+                <th>RFC</th>
+                <th>F. Nacimiento</th>
+                <th>Dirección</th>
+                <th>Celular</th>
+                <th>Casa</th>
+                <th>Oficina</th>
+                <th>Usuario ID</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyListado">
+              <tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted)">
+                <i class="fa fa-spinner fa-spin"></i> Cargando...
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="totalReg" style="text-align:right;font-size:.8rem;color:var(--text-muted);margin-top:10px"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let allData = [];
+
+async function loadListado() {
+  try {
+    showSpinner(true);
+    const perfiles = await API.perfiles.getAll();
+
+    // Ordenar por fecha de nacimiento ASC
+    allData = perfiles.sort((a, b) => {
+      const fa = a.FechaNacimiento ? new Date(a.FechaNacimiento) : new Date(0);
+      const fb = b.FechaNacimiento ? new Date(b.FechaNacimiento) : new Date(0);
+      return fa - fb;
+    });
+
+    renderTable(allData);
+  } catch(e) {
+    $('#tbodyListado').html(`<tr><td colspan="10" style="text-align:center;color:var(--danger)">Error: ${e.message}</td></tr>`);
+  } finally { showSpinner(false); }
+}
+
+function fmtDir(dirs) {
+  if (!dirs || !dirs.length) return '<span style="color:var(--text-muted)">—</span>';
+  const d = dirs[0];
+  return `<span title="${d.Calle} ${d.NumExterior}, ${d.Colonia}, ${d.Municipio}">
+    ${d.Calle || ''} ${d.NumExterior || ''}, ${d.Colonia || ''}, ${d.Municipio || ''}
+  </span>`;
+}
+
+function fmtTel(tels, campo) {
+  if (!tels || !tels.length) return '—';
+  return tels[0][campo] || '—';
+}
+
+function renderTable(data) {
+  document.getElementById('totalReg').textContent = `Total: ${data.length} registro(s)`;
+  if (!data.length) {
+    $('#tbodyListado').html('<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted)">Sin registros</td></tr>');
+    return;
+  }
+
+  const rows = data.map(p => `
+    <tr>
+      <td>${p.Id}</td>
+      <td><strong>${p.Nombre} ${p.ApellidoPaterno} ${p.ApellidoMaterno || ''}</strong></td>
+      <td><code style="font-size:.78rem">${p.Rfc || '—'}</code></td>
+      <td>
+        <span style="font-size:.82rem">
+          ${p.FechaNacimiento ? p.FechaNacimiento.substring(0,10) : '—'}
+        </span>
+      </td>
+      <td style="max-width:180px;font-size:.82rem">${fmtDir(p.DireccionDtos)}</td>
+      <td style="font-size:.82rem">${fmtTel(p.TelefonosDtos,'Celular')}</td>
+      <td style="font-size:.82rem">${fmtTel(p.TelefonosDtos,'Casa')}</td>
+      <td style="font-size:.82rem">${fmtTel(p.TelefonosDtos,'Oficina')}</td>
+      <td>${p.IdUsuario || '—'}</td>
+      <td>
+        <button class="btn-icon del" title="Eliminar perfil completo" onclick="eliminarPerfil(${p.Id})">
+          <i class="fa fa-trash"></i>
+        </button>
+      </td>
+    </tr>`).join('');
+  $('#tbodyListado').html(rows);
+}
+
+async function eliminarPerfil(id) {
+  if (!confirm(`¿Eliminar perfil #${id} junto con toda su información (dirección y teléfono)?`)) return;
+  try {
+    showSpinner(true);
+    await API.perfiles.delete(id);
+    toast('Perfil eliminado correctamente');
+    loadListado();
+  } catch(e) {
+    toast('Error al eliminar: ' + e.message, 'error');
+  } finally { showSpinner(false); }
+}
+
+// Búsqueda
+$('#searchInput').on('input', function(){
+  const q = $(this).val().toLowerCase();
+  const filtered = allData.filter(p => {
+    const nombre = `${p.Nombre} ${p.ApellidoPaterno} ${p.ApellidoMaterno||''}`.toLowerCase();
+    const rfc    = (p.Rfc||'').toLowerCase();
+    const dirs   = p.DireccionDtos ? p.DireccionDtos.map(d=>`${d.Calle} ${d.Colonia} ${d.Municipio}`.toLowerCase()).join(' ') : '';
+    return nombre.includes(q) || rfc.includes(q) || dirs.includes(q);
+  });
+  renderTable(filtered);
+});
+
+$('#btnRefresh').click(loadListado);
+
+loadListado();
+</script>
+</body>
+</html>
