@@ -1,0 +1,129 @@
+/* Estilos compartidos por las páginas internas: encabezado, tarjeta y
+   utilidades de formulario que se repiten. Se mantiene corto a propósito. */
+
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-4);
+  margin-bottom: var(--s-6);
+}
+
+.pageTitle {
+  font-size: var(--fs-xl);
+  letter-spacing: -0.02em;
+}
+
+.pageDescription {
+  margin-top: var(--s-1);
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.cardTitle {
+  font-size: var(--fs-base);
+  font-weight: 600;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* Formularios */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  margin-bottom: var(--s-4);
+}
+
+.label {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--text);
+}
+
+.labelOptional {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-control);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  transition: border-color var(--dur-fast) ease;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: var(--border-strong);
+}
+
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.input::placeholder {
+  color: var(--text-dim);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.error {
+  font-size: var(--fs-xs);
+  color: var(--danger);
+}
+
+.hint {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+
+.gridTwo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--s-4);
+}
+
+@media (max-width: 560px) {
+  .gridTwo {
+    grid-template-columns: 1fr;
+  }
+  .pageHeader {
+    flex-direction: column;
+  }
+}

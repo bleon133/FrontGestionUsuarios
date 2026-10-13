@@ -1,0 +1,76 @@
+:root {
+  /* Superficies */
+  --bg: #0a0a0d;
+  --surface: #141418;
+  --surface-2: #1b1b21;
+  --surface-hover: #202027;
+  --border: #26262e;
+  --border-strong: #33333d;
+
+  /* Texto */
+  --text: #f2f2f5;
+  --text-muted: #9a9aa6;
+  --text-dim: #7c7c88;
+
+  /* Acentos (solo métricas y estados) */
+  --accent-orange: #f29a6c;
+  --accent-yellow: #f6de7c;
+  --accent-green: #6ee6a0;
+  --accent-red: #f0605d;
+
+  /* Semántica */
+  --ok: var(--accent-green);
+  --danger: var(--accent-red);
+  --warn: var(--accent-yellow);
+  --focus: #7aa2f7;
+  /* Texto sobre fondos de acento */
+  --on-accent: #0a0a0d;
+  /* Rellenos translúcidos reutilizables */
+  --danger-soft: rgba(240, 96, 93, 0.12);
+  --danger-border: rgba(240, 96, 93, 0.4);
+  --ok-soft: rgba(110, 230, 160, 0.12);
+  --warn-soft: rgba(246, 222, 124, 0.12);
+  --accent-soft: rgba(242, 154, 108, 0.12);
+
+  /* Z-index */
+  --z-topbar: 10;
+  --z-bottom-bar: 20;
+  --z-modal: 90;
+  --z-confirm: 95;
+  --z-toast: 100;
+
+  /* Duraciones */
+  --dur-fast: 0.12s;
+  --dur-base: 0.18s;
+
+  /* Radios */
+  --r-control: 8px;
+  --r-card: 12px;
+  --r-pill: 999px;
+
+  /* Espaciado base 4 */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+
+  /* Tipografía */
+  --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-base: 14px;
+  --fs-md: 16px;
+  --fs-lg: 20px;
+  --fs-xl: 26px;
+  --fs-2xl: 32px;
+
+  /* Layout */
+  --sidebar-w: 64px;
+  --sidebar-w-expanded: 216px;
+  --topbar-h: 60px;
+  --bottom-bar-h: 56px;
+}

@@ -1,0 +1,142 @@
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 2.4fr) auto;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.12s ease;
+}
+
+.row:hover {
+  background: var(--surface-2);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.name {
+  font-size: var(--fs-base);
+  font-weight: 600;
+}
+
+.meta {
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-4);
+}
+
+.columns > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.label {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.value {
+  font-size: var(--fs-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: var(--text-muted);
+  border-radius: var(--r-control);
+}
+
+.deleteBtn:hover {
+  color: var(--danger);
+  background: rgba(240, 96, 93, 0.1);
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0 var(--s-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-control);
+  color: var(--text-dim);
+  min-width: 0;
+  flex: 0 1 260px;
+}
+
+.searchInput {
+  width: 100%;
+  min-width: 0;
+  padding: var(--s-2) 0;
+  background: none;
+  border: none;
+  font-size: var(--fs-sm);
+}
+
+@media (max-width: 560px) {
+  .searchBox {
+    flex: 1 1 100%;
+  }
+}
+
+.searchInput:focus {
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-8);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+@media (max-width: 900px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .columns {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

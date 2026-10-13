@@ -1,0 +1,81 @@
+.nombre {
+  font-weight: 600;
+}
+
+.rfc {
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', monospace;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.muted {
+  color: var(--text-dim);
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0 var(--s-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-control);
+  color: var(--text-dim);
+  min-width: 0;
+  flex: 0 1 240px;
+}
+
+.searchInput {
+  width: 100%;
+  min-width: 0;
+  padding: var(--s-2) 0;
+  background: none;
+  border: none;
+  font-size: var(--fs-sm);
+}
+
+@media (max-width: 560px) {
+  .searchBox {
+    flex: 1 1 100%;
+  }
+}
+
+.searchInput:focus {
+}
+
+.rowActions {
+  display: flex;
+  gap: var(--s-1);
+  justify-content: flex-end;
+}
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--text-muted);
+  border-radius: var(--r-control);
+  border: 1px solid transparent;
+}
+
+.iconBtn:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.iconBtnDanger:hover {
+  color: var(--danger);
+  background: rgba(240, 96, 93, 0.1);
+}
+
+.errorBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-8);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}

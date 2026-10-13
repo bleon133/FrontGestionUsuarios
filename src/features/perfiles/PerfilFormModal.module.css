@@ -1,0 +1,87 @@
+.tabs {
+  display: flex;
+  gap: var(--s-1);
+  margin-bottom: var(--s-5);
+  border-bottom: 1px solid var(--border);
+}
+
+.hidden {
+  display: none;
+}
+
+.tab {
+  padding: var(--s-2) var(--s-3);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tabActive {
+  color: var(--text);
+  border-bottom-color: var(--accent-orange);
+}
+
+.listSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.note {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+
+.block {
+  padding: var(--s-4);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-control);
+}
+
+.blockHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--s-3);
+}
+
+.blockTitle {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.removeBtn {
+  display: flex;
+  padding: var(--s-1);
+  color: var(--text-dim);
+  border-radius: var(--r-control);
+}
+
+.removeBtn:hover {
+  color: var(--danger);
+  background: rgba(240, 96, 93, 0.1);
+}
+
+.block :global(.field):last-child,
+.phoneRow > *:last-child {
+  margin-bottom: 0;
+}
+
+.phoneRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 var(--s-4);
+}
+
+@media (max-width: 560px) {
+  .phoneRow {
+    grid-template-columns: 1fr;
+  }
+}

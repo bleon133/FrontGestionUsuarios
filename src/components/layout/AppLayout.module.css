@@ -1,0 +1,233 @@
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  min-height: 100vh;
+  transition: grid-template-columns 0.18s ease;
+}
+
+.shell.expanded {
+  grid-template-columns: var(--sidebar-w-expanded) minmax(0, 1fr);
+}
+
+/* Sidebar */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: var(--topbar-h);
+  padding: 0 var(--s-4);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.brandMark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: var(--r-control);
+  background: var(--accent-orange);
+  color: #0a0a0d;
+  font-weight: 700;
+  font-size: var(--fs-sm);
+}
+
+.brandText {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-3) var(--s-2);
+  flex: 1;
+}
+
+.navItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-control);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.navItem svg {
+  flex-shrink: 0;
+}
+
+.navItem:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.navItemActive {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.navItemActive::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 2px;
+  height: 20px;
+  background: var(--accent-orange);
+  border-radius: var(--r-pill);
+}
+
+.sidebarFooter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-3) var(--s-2);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.logout:hover {
+  color: var(--danger);
+}
+
+/* Main */
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  height: var(--topbar-h);
+  padding: 0 var(--s-6);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.date {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.user {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.topbarRight {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.mobileLogout {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--r-control);
+}
+
+.mobileLogout:hover {
+  color: var(--danger);
+  border-color: rgba(240, 96, 93, 0.4);
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: clamp(16px, 2vw, 32px);
+  width: 100%;
+}
+
+/* Móvil: barra inferior */
+@media (max-width: 720px) {
+  .shell,
+  .shell.expanded {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    height: auto;
+    flex-direction: row;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    z-index: 20;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .brand,
+  .sidebarFooter {
+    display: none;
+  }
+
+  .nav {
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+    padding: var(--s-2);
+    overflow-x: auto;
+  }
+
+  .navItem {
+    flex-direction: column;
+    gap: 2px;
+    font-size: 10px;
+    padding: var(--s-1) var(--s-2);
+  }
+
+  .navItemActive::before {
+    display: none;
+  }
+
+  .topbar {
+    padding: 0 var(--s-4);
+  }
+
+  .mobileLogout {
+    display: flex;
+  }
+
+  .content {
+    padding: var(--s-4);
+    /* Deja libre la barra inferior fija para no tapar la última fila. */
+    padding-bottom: calc(var(--bottom-bar-h) + var(--s-6) + env(safe-area-inset-bottom));
+  }
+}

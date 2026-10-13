@@ -1,0 +1,90 @@
+.tabs {
+  display: flex;
+  gap: var(--s-1);
+  margin-bottom: var(--s-5);
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  padding: var(--s-2) var(--s-3);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.tabActive {
+  color: var(--text);
+  border-bottom-color: var(--accent-orange);
+}
+
+.tab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.panel {
+  min-height: 80px;
+}
+
+.hidden {
+  display: none;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+.roleList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-bottom: var(--s-5);
+  min-height: 28px;
+}
+
+.roleChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 3px var(--s-2) 3px var(--s-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.roleChip button {
+  display: flex;
+  color: var(--text-dim);
+  border-radius: var(--r-pill);
+}
+
+.roleChip button:hover {
+  color: var(--danger);
+}
+
+.assignRow {
+  display: flex;
+  gap: var(--s-2);
+  align-items: center;
+}
+
+.assignRow select {
+  flex: 1;
+}
+
+.muted {
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+}

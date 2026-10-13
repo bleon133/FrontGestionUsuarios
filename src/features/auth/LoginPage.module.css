@@ -1,0 +1,139 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-6);
+}
+
+.box {
+  width: 100%;
+  max-width: 360px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-8);
+}
+
+.mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-control);
+  background: var(--accent-orange);
+  color: #0a0a0d;
+  font-weight: 700;
+}
+
+.brandText {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.title {
+  font-size: var(--fs-xl);
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin-top: var(--s-1);
+  margin-bottom: var(--s-6);
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+.alert {
+  padding: var(--s-3) var(--s-4);
+  margin-bottom: var(--s-4);
+  font-size: var(--fs-sm);
+  color: var(--danger);
+  background: rgba(240, 96, 93, 0.1);
+  border: 1px solid rgba(240, 96, 93, 0.3);
+  border-radius: var(--r-control);
+}
+
+.field {
+  margin-bottom: var(--s-4);
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--s-1);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-control);
+  font-size: var(--fs-sm);
+}
+
+.input:focus {
+  border-color: var(--border-strong);
+}
+
+.passwordWrap {
+  position: relative;
+}
+
+.toggle {
+  position: absolute;
+  top: 50%;
+  right: var(--s-2);
+  transform: translateY(-50%);
+  display: flex;
+  padding: var(--s-1);
+  color: var(--text-dim);
+  border-radius: var(--r-control);
+}
+
+.toggle:hover {
+  color: var(--text);
+}
+
+.error {
+  display: block;
+  margin-top: var(--s-1);
+  font-size: var(--fs-xs);
+  color: var(--danger);
+}
+
+.submit {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+  padding: var(--s-3);
+  background: var(--accent-orange);
+  color: #0a0a0d;
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  border-radius: var(--r-control);
+}
+
+.submit:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.footnote {
+  margin-top: var(--s-5);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  text-align: center;
+}
