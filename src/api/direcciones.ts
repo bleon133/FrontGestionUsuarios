@@ -3,7 +3,6 @@ import type { DireccionDto, DireccionPayload } from '@/api/types'
 
 export const direccionesApi = {
   list: () => http.get<DireccionDto[]>('/Direcciones'),
-  get: (id: number) => http.get<DireccionDto>(`/Direcciones/${id}`),
   create: (payload: DireccionPayload) => http.post<boolean>('/Direcciones', payload),
   update: (id: number, payload: DireccionPayload) =>
     http.put<boolean>(`/Direcciones/${id}`, payload),

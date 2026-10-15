@@ -28,10 +28,11 @@
   - [Modelo de datos](#modelo-de-datos)
 - [Estructura del proyecto](#estructura-del-proyecto)
 - [API](#api)
-- [Sesión](#sesión)
+- [Autenticación](#autenticación)
 - [Cómo ejecutarlo](#cómo-ejecutarlo)
 - [Despliegue](#despliegue)
-- [Decisiones de diseño](#decisiones-de-diseño)
+- [Decisiones técnicas](#decisiones-técnicas)
+- [Limitaciones](#limitaciones)
 
 ---
 
@@ -102,6 +103,9 @@ El estado del servidor lo maneja **TanStack Query** (caché, invalidación y rei
 | react-hook-form | 7 | Formularios y validación |
 | lucide-react | 0.4 | Iconografía (único set) |
 | CSS Modules | nativo de Vite | Estilos encapsulados por componente |
+| ESLint | 10 (flat config) | Revisión estática con typescript-eslint y react-hooks |
+| Vitest | 5 | Pruebas unitarias |
+| Testing Library | 16 | Render y consultas en pruebas de componentes |
 
 Sin Tailwind, sin librerías de componentes y sin librerías de gráficas. Los estilos se apoyan en variables CSS centralizadas en `src/styles/tokens.css`.
 
@@ -127,16 +131,17 @@ flowchart TD
     CLIENT -->|fetch| API
 ```
 
-El cliente (`src/api/client.ts`) es el único punto que conoce la URL base y donde se traducen los códigos de estado a mensajes de usuario:
+El cliente (`src/api/client.ts`) es el único punto que conoce la URL base. Adjunta el token de la sesión como `Authorization: Bearer` en cada petición autenticada y traduce los códigos de estado a mensajes de usuario:
 
 ```mermaid
 flowchart LR
-    REQ["request()"] --> OK{"¿response.ok?"}
+    REQ["request()"] --> TOK["lee la sesión<br/>Authorization: Bearer"]
+    TOK --> OK{"¿response.ok?"}
     OK -->|sí| BODY["parsea el cuerpo<br/>texto vacío → undefined"]
     OK -->|no| ERR["ApiError(status, mensaje)"]
     ERR --> M400["400 · datos inválidos"]
-    ERR --> M401["401 · credenciales incorrectas"]
-    ERR --> M403["403 · cuenta suspendida"]
+    ERR --> M401["401 · sesión expirada<br/>limpia y redirige al login"]
+    ERR --> M403["403 · sin permiso para la acción"]
     ERR --> M409["409 · conflicto"]
     ERR --> M500["500 · error del servidor"]
 ```
@@ -233,7 +238,7 @@ erDiagram
 ```
 src/
 ├── api/
-│   ├── client.ts            Cliente fetch único + clase ApiError
+│   ├── client.ts            Cliente fetch único: Bearer, manejo de 401 y 403
 │   ├── types.ts             DTO de la API (PascalCase, como el backend)
 │   ├── usuarios.ts          Recurso de usuarios y login
 │   ├── roles.ts             Recurso de roles
@@ -257,13 +262,15 @@ src/
 │   ├── dashboard/           Métricas y accesos
 │   ├── usuarios/            Tabla y modal con pestañas
 │   ├── roles/               Tabla y formulario de roles
-│   ├── perfiles/            Tabla, modal y detalle de perfil
+│   ├── perfiles/            Tabla, detalle y modal por secciones
 │   ├── direcciones/         CRUD de direcciones
 │   └── listado/             Listado consolidado
 ├── styles/
 │   ├── tokens.css           Design tokens (colores, espaciado, tipografía)
 │   ├── globals.css          Reset y estilos base
 │   └── shared.module.css    Estilos compartidos de página y formulario
+├── test/
+│   └── setup.ts             Extiende expect con los matchers de jest-dom
 ├── utils/
 │   ├── format.ts            Fechas, nombres y vacíos
 │   └── validation.ts        Reglas de validación reutilizables
@@ -271,11 +278,15 @@ src/
 └── main.tsx                 Providers (Query, Router, Auth, Toast)
 ```
 
+El modal de perfil se armó a partir de piezas pequeñas: `usePerfilForm.ts` concentra el estado y el guardado, y `PerfilDatosSection`, `PerfilDireccionesSection` y `PerfilTelefonosSection` son las tres pestañas. Los tipos y ayudantes de los borradores viven en `perfilForm.types.ts`.
+
+Fuera de `src/` están la configuración: `vite.config.ts`, `vitest.config.ts` y `eslint.config.js`.
+
 ---
 
 ## API
 
-Base configurable con `VITE_API_URL`. Todas las rutas llevan el prefijo `/api/v1`.
+Base configurable con `VITE_API_URL`. Todas las rutas llevan el prefijo `/api/v1`. Salvo `POST /Usuarios/login`, el backend exige `Authorization: Bearer <token>`: sin token o con token expirado responde `401`, y sin el rol necesario responde `403`.
 
 | Recurso | Rutas |
 | --- | --- |
@@ -292,17 +303,18 @@ Comportamiento del backend que la interfaz respeta:
 - `POST`, `PUT` y `DELETE` devuelven solo `true`, no el objeto creado. Al crear un perfil, su Id se recupera con `GET /PerfilesUsuarios/usuario/{idUsuario}`, nunca consultando la lista y tomando el último.
 - `PUT /Usuarios/{id}` sobrescribe la contraseña. Al editar, el campo va vacío y es opcional: si el usuario no escribe una nueva, no se envía `Password` y el backend conserva la actual.
 - Un `DELETE` de rol en uso responde `409` con el mensaje del backend, que se muestra tal cual.
-- Los códigos `400`, `404`, `409` y `500` se traducen a mensajes de usuario en el cliente.
+- Los códigos `400`, `404`, `409` y `500` se traducen a mensajes de usuario en el cliente. Un `401` en una petición autenticada limpia la sesión y devuelve al login; un `403` siempre muestra el aviso de permisos.
 
 ---
 
-## Sesión
+## Autenticación
 
-El backend no emite token ni JWT. El acceso es una llamada a `POST /Usuarios/login` que valida las credenciales en el servidor y devuelve el usuario (sin contraseña). Del resultado solo se guarda en `sessionStorage` el par `{ id, username }`.
+El acceso es una llamada a `POST /Usuarios/login` que valida las credenciales en el servidor y devuelve `{ token, expiresAt, usuario }`: un JWT, su fecha de expiración en ISO UTC y el usuario (sin contraseña). En `sessionStorage`, bajo la clave `sgu.session`, se guarda solo lo necesario para la interfaz y para firmar las peticiones: `{ id, username, token, expiresAt }`. La contraseña **nunca** se persiste ni se renderiza.
 
-- Las rutas internas están protegidas por un guard: sin sesión se redirige a `/login`, y con sesión, `/login` redirige al panel.
-- La contraseña **nunca** se persiste ni se renderiza.
-- Cuando el backend implemente autenticación real, el único cambio necesario está en `src/features/auth/session.ts`: reemplazar el almacenamiento local por el token que devuelva el login.
+- El cliente lee ese token en cada petición y lo envía como `Authorization: Bearer <token>`; la llamada de login va sin cabecera.
+- `readSession` compara `expiresAt` con el reloj: si el token ya venció, la sesión se descarta.
+- Las rutas internas están protegidas por un guard: sin sesión se redirige a `/login`, y con sesión `/login` redirige al panel.
+- Cuando el servidor responde `401`, el cliente limpia la sesión y avisa a `AuthContext`, que redirige al login sin que el módulo HTTP tenga que conocer el router.
 
 ---
 
@@ -328,6 +340,10 @@ VITE_API_URL=https://apigestionusuarios.brayandeveloper.online/api/v1
 | `npm run build` | Compila TypeScript y genera el bundle en `dist/` |
 | `npm run preview` | Sirve el bundle de producción localmente |
 | `npm run typecheck` | Revisa tipos sin generar archivos |
+| `npm run lint` | Ejecuta ESLint sobre todo el repositorio |
+| `npm test` | Ejecuta las pruebas con Vitest una vez |
+
+Las pruebas viven junto al código (`src/**/*.test.ts`) y cubren la sesión, el cliente HTTP y las utilidades de formato y validación.
 
 ---
 
@@ -337,14 +353,25 @@ El proyecto incluye `vercel.json` con un rewrite a `/index.html` para que las ru
 
 ---
 
-## Decisiones de diseño
+## Decisiones técnicas
 
 **CSS Modules y tokens en vez de Tailwind.** El proyecto es pequeño y con pocos componentes. Un archivo de tokens y estilos por componente mantiene el resultado legible y sin build adicional. El tema oscuro vive entero en variables CSS: `--bg`, `--surface`, `--border` y los acentos de estado.
 
-**Un cliente HTTP único.** Toda petición pasa por `src/api/client.ts`, que centraliza la URL base, el manejo de errores y el parseo del cuerpo. Los recursos por entidad solo declaran sus rutas. Cambiar el manejo de errores o añadir cabeceras se hace en un solo sitio.
+**Un cliente HTTP único.** Toda petición pasa por `src/api/client.ts`, que centraliza la URL base, el token Bearer, el manejo de errores y el parseo del cuerpo. Los recursos por entidad solo declaran sus rutas, y un solo sitio decide cómo se firma cada petición y cómo se reacciona a un `401` o un `403`.
 
 **TanStack Query para el estado del servidor.** No hay estado global propio: la caché de Query es la fuente de verdad de los datos. Cada mutación invalida las claves que toca (por ejemplo, guardar una dirección invalida `perfiles` y `listado`), así que las vistas se mantienen coherentes sin lógica manual.
 
 **Un componente de paginación.** Las seis listas comparten el mismo `<Pagination>` con diez filas por página y reinicio a la página uno al buscar.
 
 **Accesibilidad desde el inicio.** Foco visible en todos los controles, trampa de foco y cierre con Escape en los modales, `aria-label` en los botones de icono, `role="alert"` en los avisos de error y etiquetas asociadas a cada campo. Las tablas pasan a tarjetas apiladas en móvil para no depender del scroll horizontal.
+
+**Lint y pruebas dentro del repositorio.** ESLint usa flat config con `typescript-eslint` y `react-hooks`, y revisa tanto `src/` como la propia configuración. Vitest corre en `jsdom` con Testing Library, así que las pruebas de la sesión usan un `sessionStorage` real y no un doble.
+
+---
+
+## Limitaciones
+
+- No hay refresco de token ni caché de roles en la sesión: solo se guardan `{ id, username, token, expiresAt }`, y es el servidor quien decide con el JWT si la petición pasa.
+- La paginación y la búsqueda son de cliente: la API devuelve la lista completa y el filtro se hace en memoria, así que no está pensado para tablas muy grandes.
+- Las pruebas cubren la sesión, el cliente HTTP y las utilidades; no hay pruebas de los componentes de pantalla ni de los flujos que dependen de la red.
+- La interfaz no oculta acciones por rol: si el usuario no tiene permiso, el backend responde `403` y se muestra el aviso.

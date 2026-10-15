@@ -57,10 +57,17 @@ export interface UsuariosDto {
   PerfilUsuarioDtos: PerfilUsuarioDto[] | null
 }
 
-/** Login devuelve el usuario sin Password. */
+/** Credenciales de login. */
 export interface LoginDto {
   Username: string
   Password: string
+}
+
+/** Respuesta de POST /Usuarios/login: token JWT, expiración ISO UTC y usuario. */
+export interface LoginResponse {
+  token: string
+  expiresAt: string
+  usuario: UsuariosDto
 }
 
 /* Payloads de escritura */

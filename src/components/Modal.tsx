@@ -23,7 +23,10 @@ export function Modal({ open, title, onClose, children, footer, width = 560 }: M
   const previouslyFocused = useRef<HTMLElement | null>(null)
   const titleId = useId()
   const onCloseRef = useRef(onClose)
-  onCloseRef.current = onClose
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   useEffect(() => {
     if (!open) return

@@ -1,6 +1,15 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
+import { useNavigate } from 'react-router-dom'
 import { usuariosApi } from '@/api/usuarios'
-import { ApiError } from '@/api/client'
+import { ApiError, setUnauthorizedHandler } from '@/api/client'
 import { clearSession, readSession, saveSession, type SessionUser } from './session'
 
 interface AuthContextValue {
@@ -13,19 +22,28 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(() => readSession())
+  const navigate = useNavigate()
+
+  // El cliente HTTP avisa aquí cuando un 401 invalida la sesión (token ausente
+  // o expirado). Así la redirección al login vive en el árbol de React y el
+  // cliente no necesita conocer el router.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      clearSession()
+      setUser(null)
+      navigate('/login', { replace: true })
+    })
+    return () => setUnauthorizedHandler(null)
+  }, [navigate])
 
   const login = useCallback(async (username: string, password: string) => {
     const trimmedUser = username.trim()
     try {
-      const usuario = await usuariosApi.login({ Username: trimmedUser, Password: password })
-      setUser(saveSession(usuario))
+      const response = await usuariosApi.login({ Username: trimmedUser, Password: password })
+      setUser(saveSession(response))
     } catch (error) {
-      if (error instanceof ApiError) {
-        if (error.status === 401) throw new Error('Usuario o contraseña incorrectos.')
-        if (error.status === 403) throw new Error('Tu cuenta está suspendida.')
-        throw new Error(error.message)
-      }
-      throw new Error('No se pudo conectar con el servidor.')
+      if (error instanceof ApiError) throw new Error(error.message, { cause: error })
+      throw new Error('No se pudo conectar con el servidor.', { cause: error })
     }
   }, [])
 
